@@ -1,30 +1,50 @@
 # playing with road networks to figure out out to turn shapefile into network graph, 
 # on which to perform djikstra's algorithm
 import pickle
-import geopandas as gpd
-import numpy as np
+
 from shapely.geometry import shape
 from shapely.ops import unary_union
-from shapely.geometry import Point,LineString
-from shapely.ops import split
-from os.path import join as opj
-import fiona
-import itertools
-# create a Graph
 import networkx as nx
-
-# set data directory
-DATA_DIR = "/Users/anayahall/Box/compostsiting/data"
-roads_shapefile = "tl_2019_06_prisecroads/tl_2019_06_prisecroads.shp"
+import fiona
+# import itertools
 
 
+# set data directory and define data sources
+# DATA_DIR = "/Users/anayahall/Box/compostsiting/data"
+roads_shapefile = "data/tl_2019_06_prisecroads/tl_2019_06_prisecroads.shp"
 
 
+# roads_G = 'data/ca_roads.gpickle'
+# G = nx.read_gpickle(roads_G)
 
 
+# combine the lines of the shapefile
+# lines =[shape(line['geometry']) for line in fiona.open("data/tl_2019_06_prisecroads/tl_2019_06_prisecroads.shp")]
+lines =[shape(feature['geometry']) for feature in fiona.open(roads_shapefile)]
 
 
+# alt method?
+# G = nx.Graph()
+# for line in lines:
+#    for seg_start, seg_end in zip(list(line.coords),list(line.coords)[1:]):
+#     G.add_edge(seg_start, seg_end) 
 
+print("starting union")
+
+result = unary_union(lines) # crashes here! # might need to do something else with multigeometries
+
+print("result object created - try to save... ")
+
+# raise Exception("RESULTS DONE!")
+
+# with open('data/lines_union.p', 'wb') as f:
+# 	pickle.dump(result, f)
+
+G = nx.Graph()
+import itertools
+for line in result:
+   for seg_start, seg_end in zip(list(line.coords),list(line.coords)[1:]):
+       G.add_edge(seg_start, seg_end)
 
 
 
@@ -147,3 +167,30 @@ roads_shapefile = "tl_2019_06_prisecroads/tl_2019_06_prisecroads.shp"
 
 # with open('distance.p', 'rb') as f:
 #     D = pickle.load(f)
+
+
+
+
+
+
+### NOTES:
+
+# shapely & fiona issues when using unary_union
+# https://github.com/Toblerity/Shapely/issues/553
+
+# planar graph guide: basically, grab lines, create union, get segments of resulting lines and add them as 
+# edges to a new graph
+# https://gis.stackexchange.com/questions/213369/how-to-calculate-edge-length-in-networkx
+
+
+# if issues with MULTIGEOMETRIES see here:
+# https://gis.stackexchange.com/questions/239633/how-to-convert-a-shapefile-into-a-graph-in-which-use-dijkstra?noredirect=1&lq=1
+
+
+
+
+
+
+
+
+
