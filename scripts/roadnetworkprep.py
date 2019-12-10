@@ -11,7 +11,7 @@ import fiona
 
 # set data directory and define data sources
 # DATA_DIR = "/Users/anayahall/Box/compostsiting/data"
-roads_shapefile = "data/tl_2019_06_prisecroads/tl_2019_06_prisecroads.shp"
+roads_shapefile = "roads/tl_2019_06_prisecroads.shp"
 
 
 # roads_G = 'data/ca_roads.gpickle'
@@ -46,8 +46,8 @@ for line in result:
    for seg_start, seg_end in zip(list(line.coords),list(line.coords)[1:]):
        G.add_edge(seg_start, seg_end)
 
-
-
+# print("edges made")
+# nx.write_gpickle(G, 'data/ca_roads_full.gpickle')
 
 # Roads
 # road_network = gpd.read_file(opj(DATA_DIR, 
