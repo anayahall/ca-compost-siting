@@ -294,7 +294,7 @@ for p, point in enumerate(potential_sites):
 # and saving
 # sort 50 - 100? pick size somehow
 # plot the ones based on different cats
-# could save each value as field and then use weighting to determine score!
+# could save each value as field and then use weighting to determine score
 
 
 
