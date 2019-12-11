@@ -1,7 +1,10 @@
 # PP275 Final Project
+# Anaya Hall
+# Nov. 28, 2019
+
 # This project takes in 
 
-
+# SEE roadnetworkprep.py for more detail on generating road network
 
 ##############################################################################################
 # IMPORT PACKAGES AND SET DATA SOURCES
@@ -19,17 +22,21 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # import other scripts??
-# roadnetworkprep.py
-# supportfucntions.py
+
+from supportfucntions import shortest_path
 
 # set data directory # 
-# //TODO - AMEND THIS FOR AWS
-DATA_DIR = "data"
+
+# LOCAL DATA DIR
+DATA_DIR = "/Users/anayahall/Box/compostsiting/data"
+
+# SERVER DATA DIR
+# DATA_DIR = "data"
 
 ### Data used in this script:
 # CALIFORNIA SHAPES
 california_counties_shapefile = "CA_Counties/CA_Counties_TIGER2016.shp"
-cal_tracts_shapefile = "tl_2019_06_tract/tl_2019_06_tract.shp"
+cal_tracts_shapefile = "tract/tl_2019_06_tract.shp"
 
 # MSW, ROADS, FACILITIES
 msw_shapefile = "msw_2020/msw_2020.shp"
@@ -41,8 +48,12 @@ rangelands_shapefile = "gl_bycounty/grazingland_county.shp"
 # SOCIAL/ECONOMIC/POLITICAL
 calenviroscreen_shapefile = "calenviroscreen/CESJune2018Update_SHP/CES3June2018Update_4326.shp"
 oppzones_shapefile= "Opportunity Zones/8764oz.shp"
-# add air quality districts
+# //TODO add air quality districts
 
+## USER-DEFINED PARAMETERS
+buffer_km = 75 # //TODO COULD MAKE THIS A USER INPUT SOMEWHERE ELSE! 
+
+print("DATA READY TO LOAD")
 ##############################################################################################
 # LOAD DATA
 ##############################################################################################
@@ -57,12 +68,13 @@ california = california.to_crs(epsg=4326)
 cal_tracts = gpd.read_file(opj(DATA_DIR, 
                               cal_tracts_shapefile))
 
-# tract polygons waith attached msw 
-tracts_msw = gpd.read_file(opj(DATA_DIR,
-                              tracts_msw_shapefile))
-tracts_msw = tracts_msw[(tracts_msw['subtype'] == "MSWfd_wet_dryad_wetad") | (tracts_msw['subtype'] == "MSWgn_dry_dryad")]
-tracts_msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food', 
-                        'MSWgn_dry_dryad': 'MSW_green'}, inplace = True)
+# # tract polygons waith attached msw 
+# (FOR PLOTTING ONLY -- IGNORE FOR NOW)
+# tracts_msw = gpd.read_file(opj(DATA_DIR,
+#                               tracts_msw_shapefile))
+# tracts_msw = tracts_msw[(tracts_msw['subtype'] == "MSWfd_wet_dryad_wetad") | (tracts_msw['subtype'] == "MSWgn_dry_dryad")]
+# tracts_msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food', 
+#                         'MSWgn_dry_dryad': 'MSW_green'}, inplace = True)
 
 # Municipal Solid Waste (points)
 msw = gpd.read_file(opj(DATA_DIR,
@@ -71,7 +83,7 @@ msw = gpd.read_file(opj(DATA_DIR,
 msw = msw[(msw['subtype'] == "MSWfd_wet_dryad_wetad") | (msw['subtype'] == "MSWgn_dry_dryad")]
 
 
-# data notes: 
+# MSW DATA NOTES: 
 # fog = Fats, Oils, Grease; lb = lumber; cd = cardboard; fd = food;
 # pp = paper, gn = green; ot = Other ; suffix describes what the 
 # waste is deemed suitable for
@@ -79,12 +91,13 @@ msw = msw[(msw['subtype'] == "MSWfd_wet_dryad_wetad") | (msw['subtype'] == "MSWg
 # rename categories to be more intuitive
 msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food', 
                         'MSWgn_dry_dryad': 'MSW_green'}, inplace = True)
-# msw_sum =  msw.groupby(['County', 'subtype']).sum() # may combine???
+# msw_sum =  msw.groupby(['County', 'subtype']).sum() # may combine??? //TODO?
 msw_total = msw.groupby(['ID', 'County']).sum()
 
 # Roads
-road_network = gpd.read_file(opj(DATA_DIR, 
-                                 roads_shapefile))
+# road_network = gpd.read_file(opj(DATA_DIR, 
+#                                  roads_shapefile))
+# not necessary --- bring these in as adjacency matrices later!!
 
 # Composting Facilities
 composters = gpd.read_file(opj(DATA_DIR,
@@ -93,18 +106,18 @@ composters = gpd.read_file(opj(DATA_DIR,
 # Rangelands
 rangelands = gpd.read_file(opj(DATA_DIR,
                               rangelands_shapefile))
-rangelands = rangelands.to_crs(epsg=4326)
+rangelands = rangelands.to_crs(epsg=4326) # make sure this is in the right projection
 
 # EJ
 cal_EJ = gpd.read_file(opj(DATA_DIR,
                           calenviroscreen_shapefile))
-cal_EJ.to_crs(epsg=4326)
+cal_EJ.to_crs(epsg=4326) # make sure this is in the right projection
 
 opp_zones = gpd.read_file(opj(DATA_DIR,
                           oppzones_shapefile))
 opp_zones = opp_zones[opp_zones['STATENAME'] == "California"]
 
-opp_zones = opp_zones.to_crs(epsg=4326)
+opp_zones = opp_zones.to_crs(epsg=4326) # make sure this is in the right projection
 
 
 msw = gpd.read_file(opj(DATA_DIR,
@@ -116,9 +129,9 @@ msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food',
                         'MSWgn_dry_dryad': 'MSW_green'}, inplace = True)
 
 
-
+print("DATA LOADED")
 ##############################################################################################
-# Fig XX : PLOT MSW, ROADS, EXISTING FACILITIES
+# Fig XX : PLOT MSW, ROADS, EXISTING FACILITIES --> SEE SLIDES //TODO
 ##############################################################################################
 
 # fig, ax = plt.subplots(figsize = (8,8))
@@ -163,7 +176,7 @@ msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food',
 ##############################################################################################
 # SIMULATE RANDOM POINTS!!! PLOT MSW, ROADS, EXISTING FACILITIES
 ##############################################################################################
-
+print("STARTING POINT SIM")
 
 # OKAY SKIP THAT FOR NOW, start with loop that goes through 
 # each point and adds up available feedstock, existing capacity, etc
@@ -186,12 +199,12 @@ potential_sites = MultiPoint(np.vstack((lon, lat)).T)
 # california (union of all conties for full state)
 california_state =  gpd.GeoSeries(cascaded_union(california['geometry']))[0]
 
-# intersection- only keep sites within state boundary
+# only keep sites within state boundary
 potential_sites = potential_sites.intersection(california_state)
 
 
 ##############################################################################################
-# plot to make sure this looks like I expect
+# plot to make sure this looks like I expect --> SEE SLIDES
 ##############################################################################################
 
 # f, ax = plt.subplots(ncols = 3, sharey = True, figsize = (15, 6))
@@ -236,7 +249,7 @@ potential_sites = potential_sites.intersection(california_state)
 # MAKE BUFFERS AND START CALCULATING!!!!!!!!!!
 ##############################################################################################
 
-# (maybe wrap this into function to calculate radius throughout california!)
+# (maybe wrap this into function to calculate radius throughout california!) //TODO
 
 # Calculate buffer around each point and get expected value of new site there!
 #rad = deg * pi/180
@@ -244,11 +257,13 @@ lat = california_state.centroid.y * np.pi/180 # in radians
 
 km_per_degree = np.cos(lat)*111.321
 
-buffer_radius = 75/km_per_degree
+buffer_radius = buffer_km/km_per_degree # buffer_km defined by USER ABOVE
 
 
 ##############################################################################################
-# LOAD MATRICES FROM ROAD NETWORK
+# LOAD MATRICES FROM ROAD NETWORK (see roadnetworkprep.py for details on creation)
+print('LOADING ROAD MATRICES')
+
 with open('adjacency.p', 'rb') as f:
     L = pickle.load(f)
 
@@ -260,6 +275,9 @@ with open('distance.p', 'rb') as f:
 # f, ax = plt.subplots(figsize = (8,8))
 # california.plot(color = 'white', edgecolor = 'darkgrey', ax = ax)
 
+raise Exception("ABOUT TO START CALCULATING SCORES!! TROUBLESHOOT FROM HERE")
+
+print("START CALCULATING SCORES")
 # CREATE EMPTY ARRAY FOR POTENTIAL SITES VALUES
 site_results = np.zeros(len(potential_sites))
 # LOOP THROUGH ALL POINTS
@@ -293,6 +311,9 @@ for p, point in enumerate(potential_sites):
         site_results[p] = value
 
 
+# save site results to plot later
+with open('site_results.p', 'wb') as f:
+    pickle.dump(site_results, f)
 
 # ax.plot([], [], 'kx', label = 'Potential Site')    
 # ax.plot([], [], 'k--', label = 'Buffer Zone')   
@@ -307,15 +328,21 @@ for p, point in enumerate(potential_sites):
 # site_results
 
 
+##############################################################################################
 
 #  //TODO
 # make sure considering all of the things
 # and saving
-# sort 50 - 100? pick size somehow
+# sort 50 - 100? pick size somehow?
 # plot the ones based on different cats
 # could save each value as field and then use weighting to determine score
 
-
-
+##############################################################################################
+# FIG X. RESULTS
+##############################################################################################
+# //TODO
+# Plot histogram of something
+# map viz of different categories
+# make user input? 
 
 

@@ -1,8 +1,13 @@
+# RoadNetworkPrep
+# Anaya Hall
+# Nov. 28, 2019 
 # playing with road networks to figure out out to turn shapefile into network graph, 
 # on which to perform djikstra's algorithm
 
 # NOTE: VERY SLOW!! run on server!!
+# UPDATE 12/10/19: now only using 'primary roads' (not secondary), so much faster
 
+##############################################################################################
 
 import pickle
 from shapely.geometry import shape
@@ -20,49 +25,8 @@ import numpy as np
 # # DATA_DIR = "/Users/anayahall/Box/compostsiting/data"
 roads_shapefile = "roads/tl_2019_06_prisecroads.shp"
 
-# # combine the lines of the shapefile
-# # lines =[shape(line['geometry']) for line in fiona.open("data/tl_2019_06_prisecroads/tl_2019_06_prisecroads.shp")]
-# lines =[shape(feature['geometry']) for feature in fiona.open(roads_shapefile)]
-
-
-# print("starting union")
-
-# result = unary_union(lines) # crashes here! # might need to do something else with multigeometries
-
-# print("result object created - try to save... ")
-
-
-# G = nx.Graph()
-# import itertools
-# for line in result:
-#     weight = line.length
-#     for seg_start, seg_end in zip(list(line.coords),list(line.coords)[1:]):
-#        G.add_edge(seg_start, seg_end, weight = weight)
-
-# # print("edges made")
-# nx.write_gpickle(G, 'ca_roads_full.gpickle')
-
 ############################################################################################
-
-
-### NOTES:
-
-# shapely & fiona issues when using unary_union
-# https://github.com/Toblerity/Shapely/issues/553
-
-# planar graph guide: basically, grab lines, create union, get segments of resulting lines and add them as 
-# edges to a new graph
-# https://gis.stackexchange.com/questions/213369/how-to-calculate-edge-length-in-networkx
-
-
-# if issues with MULTIGEOMETRIES see here:
-# https://gis.stackexchange.com/questions/239633/how-to-convert-a-shapefile-into-a-graph-in-which-use-dijkstra?noredirect=1&lq=1
-
-
-
-
-############################################################################################
-# ALTERNATE ATTEMPT TO BUILD OUT ADJ MATRIX
+# BUILD OUT ADJ & DIST MATRIX FROM SHAPEFILE
 #############################################################################################
 
 # load roads
@@ -213,4 +177,50 @@ with open('distance.p', 'wb') as f:
 ##################
 # scp -i ~/.ssh/AnayaKeyPair.pem ec2-user@ec2-3-135-216-1.us-east-2.compute.amazonaws.com:~/test/distance.p /Users/anayahall/Box/compostsiting/outputs
 # scp -i ~/.ssh/AnayaKeyPair.pem ec2-user@ec2-3-135-216-1.us-east-2.compute.amazonaws.com:~/test/adjacency.p /Users/anayahall/Box/compostsiting/outputs
+
+
+##############################################################################################
+# ALTERNATE APPROACH FOR MAKING PLANAR GRAPH USING NETWORKX
+##############################################################################################
+
+# # combine the lines of the shapefile
+# # lines =[shape(line['geometry']) for line in fiona.open("data/tl_2019_06_prisecroads/tl_2019_06_prisecroads.shp")]
+# lines =[shape(feature['geometry']) for feature in fiona.open(roads_shapefile)]
+
+
+# print("starting union")
+
+# result = unary_union(lines) # crashes here! # might need to do something else with multigeometries
+
+# print("result object created - try to save... ")
+
+
+# G = nx.Graph()
+# import itertools
+# for line in result:
+#     weight = line.length
+#     for seg_start, seg_end in zip(list(line.coords),list(line.coords)[1:]):
+#        G.add_edge(seg_start, seg_end, weight = weight)
+
+# # print("edges made")
+# nx.write_gpickle(G, 'ca_roads_full.gpickle')
+
+############################################################################################
+
+
+### NOTES:
+
+# shapely & fiona issues when using unary_union
+# https://github.com/Toblerity/Shapely/issues/553
+
+# planar graph guide: basically, grab lines, create union, get segments of resulting lines and add them as 
+# edges to a new graph
+# https://gis.stackexchange.com/questions/213369/how-to-calculate-edge-length-in-networkx
+
+
+# if issues with MULTIGEOMETRIES see here:
+# https://gis.stackexchange.com/questions/239633/how-to-convert-a-shapefile-into-a-graph-in-which-use-dijkstra?noredirect=1&lq=1
+
+
+############################################################################################
 
