@@ -24,7 +24,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # set data directory # 
 # //TODO - AMEND THIS FOR AWS
-DATA_DIR = "/Users/anayahall/Box/compostsiting/data"
+DATA_DIR = "data"
 
 ### Data used in this script:
 # CALIFORNIA SHAPES
@@ -246,6 +246,16 @@ km_per_degree = np.cos(lat)*111.321
 
 buffer_radius = 75/km_per_degree
 
+
+##############################################################################################
+# LOAD MATRICES FROM ROAD NETWORK
+with open('adjacency.p', 'rb') as f:
+    L = pickle.load(f)
+
+with open('distance.p', 'rb') as f:
+    Distance = pickle.load(f)
+##############################################################################################
+
 # ###### PLOT ###########################
 # f, ax = plt.subplots(figsize = (8,8))
 # california.plot(color = 'white', edgecolor = 'darkgrey', ax = ax)
@@ -254,7 +264,7 @@ buffer_radius = 75/km_per_degree
 site_results = np.zeros(len(potential_sites))
 # LOOP THROUGH ALL POINTS
 for p, point in enumerate(potential_sites):
-    if p % 10 == 0:
+    if p % 100 == 0:
         print("looping through site number: ", p)
     value = 0
     # buffer point
