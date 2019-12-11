@@ -1,5 +1,5 @@
 # PP275 Final Project
-# THis project takes in 
+# This project takes in 
 
 
 
@@ -27,17 +27,21 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 DATA_DIR = "/Users/anayahall/Box/compostsiting/data"
 
 ### Data used in this script:
+# CALIFORNIA SHAPES
 california_counties_shapefile = "CA_Counties/CA_Counties_TIGER2016.shp"
 cal_tracts_shapefile = "tl_2019_06_tract/tl_2019_06_tract.shp"
-msw_shapefile = "msw_2020/msw_2020.shp"
-tracts_msw_shapefile = "tracts_msw/tracts_msw.shp"
 
+# MSW, ROADS, FACILITIES
+msw_shapefile = "msw_2020/msw_2020.shp"
+#tracts_msw_shapefile = "tracts_msw/tracts_msw.shp"
 roads_shapefile = "tl_2019_06_prisecroads/tl_2019_06_prisecroads.shp"
 compost_facilities_shapefile = "clean_swis/clean_swis.shp" # note: PREVIOUSLY CLEANED!
 rangelands_shapefile = "gl_bycounty/grazingland_county.shp"
 
+# SOCIAL/ECONOMIC/POLITICAL
 calenviroscreen_shapefile = "calenviroscreen/CESJune2018Update_SHP/CES3June2018Update_4326.shp"
 oppzones_shapefile= "Opportunity Zones/8764oz.shp"
+# add air quality districts
 
 ##############################################################################################
 # LOAD DATA
@@ -59,7 +63,6 @@ tracts_msw = gpd.read_file(opj(DATA_DIR,
 tracts_msw = tracts_msw[(tracts_msw['subtype'] == "MSWfd_wet_dryad_wetad") | (tracts_msw['subtype'] == "MSWgn_dry_dryad")]
 tracts_msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food', 
                         'MSWgn_dry_dryad': 'MSW_green'}, inplace = True)
-
 
 # Municipal Solid Waste (points)
 msw = gpd.read_file(opj(DATA_DIR,
@@ -168,7 +171,7 @@ msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food',
 # simulating random points:
 
 # number of events to simulate
-N = 100
+N = 1000
 
 # AREA to cast random numbers in 
 # 10 degrees from -125
@@ -232,6 +235,7 @@ potential_sites = potential_sites.intersection(california_state)
 ##############################################################################################
 # MAKE BUFFERS AND START CALCULATING!!!!!!!!!!
 ##############################################################################################
+
 # (maybe wrap this into function to calculate radius throughout california!)
 
 # Calculate buffer around each point and get expected value of new site there!
@@ -277,6 +281,9 @@ for p, point in enumerate(potential_sites):
     if value > 100:
 #         print('YAY')
         site_results[p] = value
+
+
+
 # ax.plot([], [], 'kx', label = 'Potential Site')    
 # ax.plot([], [], 'k--', label = 'Buffer Zone')   
 # ax.plot([], [], 'mo', alpha = 0.5, label = 'MSW generation')
@@ -289,12 +296,15 @@ for p, point in enumerate(potential_sites):
 # CHECK SITE RESULTS    
 # site_results
 
+
+
 #  //TODO
 # make sure considering all of the things
 # and saving
 # sort 50 - 100? pick size somehow
 # plot the ones based on different cats
 # could save each value as field and then use weighting to determine score
+
 
 
 

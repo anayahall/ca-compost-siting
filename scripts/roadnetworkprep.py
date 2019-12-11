@@ -8,6 +8,7 @@ import pickle
 from shapely.geometry import shape
 # from shapely.ops import unary_union
 from shapely.ops import split
+from shapely.geometry import Point, LineString
 import networkx as nx
 import fiona
 import geopandas as gpd
@@ -113,8 +114,8 @@ for i in range(len(road_network)):
 nodelist = np.unique(NodeList_duplicates, axis=0)
 
 # # picke and save node list
-# with open('nodelist.p', 'wb') as f:
-#     pickle.dump(nodelist, f)     
+with open('nodelist.p', 'wb') as f:
+    pickle.dump(nodelist, f)     
 
 # Load node list from intersection calculation
 # with open('nodelist.p', 'rb') as f:
@@ -125,7 +126,9 @@ node_lats = (nodelist[np.array([np.arange(len(nodelist))]), 3]).T
 # create shapely point series from nodes (to use to split linestrings below)
 node_pts =  [Point(x,y) for x, y in zip(node_lons, node_lats)]
     
-#node_pts
+# # picke and save node list
+with open('node_pts.p', 'wb') as f:
+    pickle.dump(node_pts, f)   
 
 print("NODE LIST COMPLETE - NEXT IS EDGELIST")
 
@@ -159,6 +162,9 @@ print("EDGE LIST MADE - NEXT IS ADJACENCY and DISTANCE MATRICES")
 # # CREATE ADJACENCY MATRIX
 L = np.zeros(((len(node_pts),(len(node_pts)))))
 D = np.full(((len(node_pts),(len(node_pts)))), np.inf)
+
+start_j = 1
+start_j = 1
 
 # # walk it out walk it out!
 for i, geom in enumerate(edgelist):
@@ -201,4 +207,10 @@ with open('distance.p', 'wb') as f:
 
 # with open('distance.p', 'rb') as f:
 #     D = pickle.load(f)
+
+
+# //TODO - TRANSFER BACK TO MAIN COMP WHEN DONE!
+##################
+# scp -i ~/.ssh/AnayaKeyPair.pem ec2-user@ec2-3-135-216-1.us-east-2.compute.amazonaws.com:~/test/distance.p /Users/anayahall/Box/compostsiting/outputs
+# scp -i ~/.ssh/AnayaKeyPair.pem ec2-user@ec2-3-135-216-1.us-east-2.compute.amazonaws.com:~/test/adjacency.p /Users/anayahall/Box/compostsiting/outputs
 

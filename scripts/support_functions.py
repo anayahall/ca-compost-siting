@@ -55,7 +55,7 @@ def add_region_variable(df, county_column):
 
 # REQUIRES DISTANCE_NETWORK TO BE ALREADY MADE!!!!
 
-def shortest_path(distance_network = Distance, k0, k_final): # change presets as desired!
+def shortest_path(distance_network, k0, k_final): # change presets as desired!
     """
     uses djisktra's algorithm to calculate the shortest path between defined nodes
     given a cost-distance matrix
@@ -66,14 +66,14 @@ def shortest_path(distance_network = Distance, k0, k_final): # change presets as
     # k0 = int(input('Station for facility?  Enter 1 to ' + str(len(stations)) + ':'))
     
     # D(i) = 'minimum distance to source location' [initialize as 'np.inf' for all elements except zero at source]
-    D = np.full(len(stations), np.inf)
+    D = np.full(len(distance_network), np.inf)
     D[k0] = 0
 
     # P(i) = 'parent node', keeps track of location where you jsut were [initialized as 'NaN' everywhere]
-    P = np.full(len(stations), np.NaN)
+    P = np.full(len(distance_network), np.NaN)
 
     # P(i) = 'parent node', keeps track of location where you jsut were [initialized as 'NaN' everywhere]
-    I = np.zeros(len(stations))
+    I = np.zeros(len(distance_network))
 
     # thrid, ITERATE the following until I(i) = 1 (while I == 0)
 
@@ -134,6 +134,6 @@ def shortest_path(distance_network = Distance, k0, k_final): # change presets as
     # ax[1].set_ylabel("Count")
 
  
-    return D
+    return path
 
 
