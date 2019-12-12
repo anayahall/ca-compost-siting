@@ -20,6 +20,8 @@ from shapely.geometry import Point, MultiPoint, Polygon, MultiPolygon
 from shapely.ops import cascaded_union
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from shapely.ops import nearest_points
+
 
 # import other scripts??
 
@@ -279,6 +281,8 @@ buffer_radius = buffer_km/km_per_degree # buffer_km defined by USER ABOVE
 print('LOADING ROAD MATRICES')
 
 # //TODO - make sure directory is consistent on REMOTE SERVER
+with open('outputs/node_pts.p', 'rb') as f:
+    nodes = pickle.load(f)
 
 with open('outputs/adjacency.p', 'rb') as f:
     L = pickle.load(f)
@@ -327,13 +331,25 @@ for p, point in enumerate(potential_sites):
             # ax.scatter(geom.x, geom.y, marker = 'o', color = 'black', 
             #            edgecolor = 'white', alpha = '0.9')
             dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
-
+	###### CLOSEST NODE? THEN USE DIJSTRKA"S ~~~~~~~~~~
+	# this 
+	# np = nearest_points(point, nodes[1])[1]
     ###### dist
     if value > 100:
 #         print('YAY')
         site_results[p] = value
 
 ## NOTE: THIS TAKES ABOUT 12 min on my local machine to run - check server? //TODO
+
+test = []
+for point in potential_sites:
+    nn = np.argmin(nearest_points(point, n) for n in nodes)
+    test.append(nn)
+
+
+
+
+
 
 
 # save site results to plot later
