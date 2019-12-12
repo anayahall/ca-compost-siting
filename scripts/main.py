@@ -24,7 +24,6 @@ from shapely.ops import nearest_points
 
 
 # import other scripts??
-
 from support_functions import shortest_path
 
 # set data directory # 
@@ -46,12 +45,13 @@ msw_shapefile = "msw_2020/msw_2020.shp"
 roads_shapefile = "tl_2019_06_prisecroads/tl_2019_06_prisecroads.shp"
 compost_facilities_shapefile = "clean_swis/clean_swis.shp" # note: PREVIOUSLY CLEANED!
 rangelands_shapefile = "gl_bycounty/grazingland_county.shp"
-cropland_shapefile "Crop__Mapping_2014/Crop__Mapping_2014.shp"
+cropland_shapefile = "Crop__Mapping_2014/Crop__Mapping_2014.shp"
 
 # SOCIAL/ECONOMIC/POLITICAL
 calenviroscreen_shapefile = "calenviroscreen/CESJune2018Update_SHP/CES3June2018Update_4326.shp"
 oppzones_shapefile= "Opportunity Zones/8764oz.shp"
 # //TODO add air quality districts 
+air_district_shapefile = "ca_air_district/CaAirDistrict.shp"
 
 ## USER-DEFINED PARAMETERS
 buffer_km = 75 # //TODO COULD MAKE THIS A USER INPUT SOMEWHERE ELSE! 
@@ -138,16 +138,25 @@ composters['cap_ton'] = composters['cap_m3']*0.58
 rangelands = gpd.read_file(opj(DATA_DIR,
                               rangelands_shapefile))
 rangelands = rangelands.to_crs(epsg=4326) # make sure this is in the right projection
+# identify centroid for use in node assignment
+rangelands['centroid'] = rangelands['geometry'].centroid
 
 # Read in cropland data
-cropmap = gpd.read_file(opj(DATA_DIR, 
-    cropland_shapefile)) 
+print("--reading in CROP MAP--")
 
-# Exclude non-crop uses
-# non_crops = ["Managed Wetland", "Urban", "Idle", "Mixed Pasture"] #Anaya's original categories to exclude
-non_crops = ["NR | RIPARIAN VEGETATION", "U | URBAN", "V | VINEYARD"] #Caitlin's categories to exclued
-# crops = cropmap[cropmap['Crop2014'].isin(non_crops)== False]  #Anaya's field
-crops = cropmap[cropmap['DWR_Standa'].isin(non_crops)== False] # Caitlin's field is DWR_Standa
+# THIS TAKES A LONG TIME - JUST READ IN SMALLER FILE
+# cropmap = gpd.read_file(opj(DATA_DIR, cropland_shapefile)) 
+
+# # FOCUS ON ONLY VINEYARDS AND ORCHARDS
+# crop_focus = ["D | DECIDUOUS FRUITS AND NUTS", "V | VINEYARD", "C | CITRUS AND SUBTROPICAL"]
+# tree_crops = cropmap[cropmap['DWR_Standa'].isin(crop_focus)== True] # Compost market end-use
+
+# out = r"treecrops.shp"
+# tree_crops.to_file(driver='ESRI Shapefile', filename=opj(DATA_DIR, out))
+
+crops = gpd.read_file(opj(DATA_DIR, 'treecrops.shp'))
+# identify centroid for use in node assignment
+crops['centroid'] = crops['geometry'].centroid
 #############################################
 
 
@@ -167,6 +176,17 @@ opp_zones = opp_zones[opp_zones['STATENAME'] == "California"]
 opp_zones = opp_zones.to_crs(epsg=4326) # make sure this is in the right projection
 #############################################
 
+
+##### AIR DISTRICTS ##########################
+air_districts = gpd.read_file(opj(DATA_DIR, air_district_shapefile))
+air_districts = air_districts.to_crs(epsg=4326)
+
+# PLOT THESE TO SEE HOW THEY DO/DON'T ALIGN WITH COUNTIES #
+fig, ax = plt.subplots()
+air_districts.plot(column = 'NAME', ax = ax)
+california.plot(facecolor="none", edgecolor = 'black', linestyle = '--', ax = ax)
+plt.show()
+#############################################
 
 ##############################################################################################
 # LOAD MATRICES FROM ROAD NETWORK (see roadnetworkprep.py for details on creation)
@@ -190,25 +210,31 @@ print("DATA LOADED & CLEANED")
 ##############################################################################################
 
 
-# ASSOCIATE MSW PTS to NODE ON ROAD NETWORK
-msw_node = []
-print("starting to associate msw pts to road nodes")
-for p, point in enumerate(msw['geometry']):
-    temp = []
-    if p % 100 == 0:
-        print("STILL RUNNING: ", p)
-    for i, node in enumerate(nodes):
-        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
-        temp.append(dist)
-    nn = np.argmin(temp)
-    msw_node.append(nn)
+# ASSOCIATE MSW PTS to NODE ON ROAD NETWORK 
+# (RUN ONCE, THEN SAVE AND USE OVER)
 
+# msw_node = []
+# print("starting to associate msw pts to road nodes")
+# for p, point in enumerate(msw['geometry']):
+#     temp = []
+#     if p % 100 == 0:
+#         print("STILL RUNNING: ", p)
+#     for i, node in enumerate(nodes):
+#         dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+#         temp.append(dist)
+#     nn = np.argmin(temp)
+#     msw_node.append(nn)
 
-# These take a long time - SAVE THEM!!! 
-with open('outputs/msw_node.p', 'wb') as f:
-    pickle.dump(msw_node)
+# # These take a long time - SAVE THEM!!! 
+# with open('outputs/msw_node.p', 'wb') as f:
+#     pickle.dump(msw_node, f)
 
-print("msw_node saved")
+# print("msw_node saved")
+
+# instead of re-running - load saved file!
+with open('outputs/msw_node.p', 'rb') as f:
+    msw_node = pickle.load(f)
+
 
 # ASSOCIATE EXISTING FACILITIES   
 composter_node = []
@@ -216,29 +242,72 @@ print("starting to associate existing comopsters to road nodes")
 for p, point in enumerate(composters['geometry']):
     temp = []
     if p % 100 == 0:
-        print("STILL RUNNING: ", p)
+        print("CMP - STILL RUNNING: ", p)
     for i, node in enumerate(nodes):
         dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
         temp.append(dist)
     nn = np.argmin(temp)
     composter_node.append(nn)
 
-# ASSOCIATE GL and CL ? TO NEAREST NODE? (use nearest_pt here?)
+# ASSOCIATE GL and CL TO NEAREST NODE? (use CENTROID OF POLYGON
+gl_node = []
+for p, point in enumerate(rangelands['centroid']):
+    temp = []
+    if p % 10 == 0:
+        print("GL - STILL RUNNING: ", p)
+    for i, node in enumerate(nodes):
+        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+        temp.append(dist)
+    nn = np.argmin(temp)
+    gl_node.append(nn)
 
+raise Exception("ALL LOADED - PRE- CROP-NODE ASSOCIATION (RUNNING ELSEWHERE)")    
+
+crop_node = []
+for p, point in enumerate(crops['centroid']):
+    temp = []
+    if p % 10 == 0:
+        print("CROP - STILL RUNNING: ", p)
+    for i, node in enumerate(nodes):
+        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+        temp.append(dist)
+    nn = np.argmin(temp)
+    crop_node.append(nn)
+
+# # These take a long time - SAVE THEM!!! 
+with open('outputs/crop_node.p', 'wb') as f:
+    pickle.dump(crop_node, f)
+
+print("msw_node saved")
+
+# instead of re-running - load saved file!
+with open('outputs/crop_node.p', 'rb') as f:
+    crop_node = pickle.load(f)
 
 
 # PLOT THESE IN TURN TO MAKE SURE THEY LOOK OKAY? 
-fig, ax = plt.subplots(ncols = 3, figsize = (12,4))
-# msw and nodes (plot each?)
-msw.plot(marker = 'o', color = 'm', edgecolor = 'white', label = ' MSW - TRUE',
-    ax = ax[0], alpha = 0.5)
-## PLOT - MSW_NODE
-composters.plot(marker = 'o', color = 'black', edgecolor = 'white', 
-    label = "Compost Facility - TRUE", ax = ax[1], zorder = 10)
-## PLOT - COMPOSTER_NODE
+# //TODO - THEY DON"T LOOK AMAZING ---- JUST EXPLAIN AS A 'LIMITATION'
+# fig, ax = plt.subplots(ncols = 3, figsize = (18,8))
+# # msw and nodes (plot each?)
+# msw.plot(marker = 'o', color = 'm', edgecolor = 'white', label = ' MSW - TRUE',
+#     ax = ax[0], alpha = 0.5)
+# for i in range(len(msw_node)):
+#     if i % 200 == 0:
+#         print("MSW -- STILL THINKING: ", i)
+#     n = msw_node[i]
+#     _ = ax[0].plot(nodes[n].x, nodes[n].y, marker = 'o', color = 'c', alpha = 0.5)
 
-# plot GL & CL
-
+# ## PLOT - MSW_NODE
+# composters.plot(marker = 'o', color = 'black', edgecolor = 'white', 
+#     label = "Compost Facility - TRUE", ax = ax[1], alpha = 0.5)
+# ## PLOT - COMPOSTER_NODE
+# for i in range(len(composter_node)):
+#     if i % 100 == 0:
+#         print("COMPOSTER -- STILL THINKING: ", i)
+#     n = composter_node[i]
+#     _ = ax[1].plot(nodes[n].x, nodes[n].y, marker = 'o', color = 'y', alpha = 0.5)
+# # plot GL & CL
+# plt.show()
 
 ##############################################################################################
 # Fig XX : PLOT MSW, ROADS, EXISTING FACILITIES --> SEE SLIDES //TODO
@@ -416,7 +485,7 @@ for p, point in enumerate(potential_sites):
             #            alpha = '0.2')
 #             geom.plot(markersize = 'total_wt' ax = ax, alpha = 0.5)
             value += msw.iloc[f, :]['wt']
-            dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
+            # dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
     ##### COMPOST FACILITIES (CAPACITY) ######
     for c, geom in enumerate(composters['geometry']):
 #         print(c)
@@ -425,7 +494,7 @@ for p, point in enumerate(potential_sites):
             value += -(composters.iloc[c, :]['cap_ton'])
             # ax.scatter(geom.x, geom.y, marker = 'o', color = 'black', 
             #            edgecolor = 'white', alpha = '0.9')
-            dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
+            # dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
 	###### CLOSEST NODE? THEN USE DIJSTRKA"S ~~~~~~~~~~
 	# this 
 	# np = nearest_points(point, nodes[1])[1]

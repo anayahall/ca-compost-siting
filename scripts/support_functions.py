@@ -103,9 +103,11 @@ def shortest_path(distance_network, k0, k_final): # change presets as desired!
                 P[k] = j
                 
     path = [k_final]
+    distance_traveled = 0
 
     while path[-1] != k0:
         k = int(P[path[-1]])
+        # distance_traveled += Distance[path[-1],k]
         path.append(k)
 
     # fig, ax = plt.subplots(ncols = 2, figsize = (15, 5))
@@ -134,6 +136,6 @@ def shortest_path(distance_network, k0, k_final): # change presets as desired!
     # ax[1].set_ylabel("Count")
 
  
-    return path
+    return distance_traveled
 
 
