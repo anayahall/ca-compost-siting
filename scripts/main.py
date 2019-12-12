@@ -301,6 +301,16 @@ print("START CALCULATING SCORES")
 # CREATE EMPTY ARRAY FOR POTENTIAL SITES VALUES
 site_results = np.zeros(len(potential_sites))
 
+# CONNECT EACH RANDOMIZED POINT TO NODE ON ROAD NETWORK
+point_node = []
+for p, point in enumerate(potential_sites):
+    temp = []
+    for i, node in enumerate(nodes):
+        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+        temp.append(dist)
+    nn = np.argmin(temp)
+    point_node.append(nn)
+
 # LOOP THROUGH ALL POINTS
 for p, point in enumerate(potential_sites):
     if p % 100 == 0:
@@ -341,10 +351,7 @@ for p, point in enumerate(potential_sites):
 
 ## NOTE: THIS TAKES ABOUT 12 min on my local machine to run - check server? //TODO
 
-test = []
-for point in potential_sites:
-    nn = np.argmin(nearest_points(point, n) for n in nodes)
-    test.append(nn)
+
 
 
 
