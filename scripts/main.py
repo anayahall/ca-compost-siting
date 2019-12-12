@@ -46,21 +46,24 @@ msw_shapefile = "msw_2020/msw_2020.shp"
 roads_shapefile = "tl_2019_06_prisecroads/tl_2019_06_prisecroads.shp"
 compost_facilities_shapefile = "clean_swis/clean_swis.shp" # note: PREVIOUSLY CLEANED!
 rangelands_shapefile = "gl_bycounty/grazingland_county.shp"
+cropland_shapefile "Crop__Mapping_2014/Crop__Mapping_2014.shp"
 
 # SOCIAL/ECONOMIC/POLITICAL
 calenviroscreen_shapefile = "calenviroscreen/CESJune2018Update_SHP/CES3June2018Update_4326.shp"
 oppzones_shapefile= "Opportunity Zones/8764oz.shp"
-# //TODO add air quality districts
+# //TODO add air quality districts 
 
 ## USER-DEFINED PARAMETERS
 buffer_km = 75 # //TODO COULD MAKE THIS A USER INPUT SOMEWHERE ELSE! 
 
 print("DATA READY TO LOAD")
+
 ##############################################################################################
 # LOAD DATA
 ##############################################################################################
 
-# California counties
+
+##### California counties ##########
 california = gpd.read_file(opj(DATA_DIR, 
         california_counties_shapefile))
 # set to convention for california 4326 (so all in degrees!)
@@ -77,13 +80,15 @@ cal_tracts = gpd.read_file(opj(DATA_DIR,
 # tracts_msw = tracts_msw[(tracts_msw['subtype'] == "MSWfd_wet_dryad_wetad") | (tracts_msw['subtype'] == "MSWgn_dry_dryad")]
 # tracts_msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food', 
 #                         'MSWgn_dry_dryad': 'MSW_green'}, inplace = True)
+###################################
 
-# Municipal Solid Waste (points)
+
+
+##### Municipal Solid Waste (points) #####
 msw = gpd.read_file(opj(DATA_DIR,
                   msw_shapefile))
 # filter to just keep food and green waste (subject of regulations)
 msw = msw[(msw['subtype'] == "MSWfd_wet_dryad_wetad") | (msw['subtype'] == "MSWgn_dry_dryad")]
-
 
 # MSW DATA NOTES: 
 # fog = Fats, Oils, Grease; lb = lumber; cd = cardboard; fd = food;
@@ -96,45 +101,8 @@ msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food',
 # msw_sum =  msw.groupby(['County', 'subtype']).sum() # may combine??? //TODO?
 msw_total = msw.groupby(['ID', 'County']).sum()
 
-# Roads
-# road_network = gpd.read_file(opj(DATA_DIR, 
-#                                  roads_shapefile))
-# not necessary --- bring these in as adjacency matrices later!!
-
-# Composting Facilities
-composters = gpd.read_file(opj(DATA_DIR,
-                                compost_facilities_shapefile))
-# change capacity metric to tons!
-composters['cap_ton'] = composters['cap_m3']*0.58
-
-
-# Rangelands
-rangelands = gpd.read_file(opj(DATA_DIR,
-                              rangelands_shapefile))
-rangelands = rangelands.to_crs(epsg=4326) # make sure this is in the right projection
-
-# EJ
-cal_EJ = gpd.read_file(opj(DATA_DIR,
-                          calenviroscreen_shapefile))
-cal_EJ.to_crs(epsg=4326) # make sure this is in the right projection
-
-opp_zones = gpd.read_file(opj(DATA_DIR,
-                          oppzones_shapefile))
-opp_zones = opp_zones[opp_zones['STATENAME'] == "California"]
-
-opp_zones = opp_zones.to_crs(epsg=4326) # make sure this is in the right projection
-
-
-msw = gpd.read_file(opj(DATA_DIR,
-                  msw_shapefile))
-
-# filter to just keep food and green waste (subject of regulations)
-msw = msw[(msw['subtype'] == "MSWfd_wet_dryad_wetad") | (msw['subtype'] == "MSWgn_dry_dryad")]
-msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food', 
-                        'MSWgn_dry_dryad': 'MSW_green'}, inplace = True)
-
+# ADJUST VALUES 
 # I'll be using 100% of the GREEN waste, so leave as is
-
 # for FOOD WASTE, take off 2.5%, 
 # then of the remainer divert 62.5% of generation to compost
 # (assume that 25% goes straight to compost, 75% goes to AD, which reduces volume of material by half, 
@@ -144,8 +112,134 @@ msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food',
 new_wt_values = msw[msw['subtype'] == 'MSW_food']['wt']*0.609375
 # replace these in place!
 msw.loc[msw['subtype'] == 'MSW_food', 'wt'] = new_wt_values
+###################################
 
-print("DATA LOADED")
+
+
+##### Roads #########################
+# road_network = gpd.read_file(opj(DATA_DIR, 
+#                                  roads_shapefile))
+# not necessary --- bring these in as adjacency matrices later!!
+###################################
+
+
+
+##### Composting Facilities ##########
+composters = gpd.read_file(opj(DATA_DIR,
+                                compost_facilities_shapefile))
+# change capacity metric to tons!
+composters['cap_ton'] = composters['cap_m3']*0.58
+########################################
+
+
+
+##### LAND (END USE MARKETS) ###################
+# RANGEALND
+rangelands = gpd.read_file(opj(DATA_DIR,
+                              rangelands_shapefile))
+rangelands = rangelands.to_crs(epsg=4326) # make sure this is in the right projection
+
+# Read in cropland data
+cropmap = gpd.read_file(opj(DATA_DIR, 
+    cropland_shapefile)) 
+
+# Exclude non-crop uses
+# non_crops = ["Managed Wetland", "Urban", "Idle", "Mixed Pasture"] #Anaya's original categories to exclude
+non_crops = ["NR | RIPARIAN VEGETATION", "U | URBAN", "V | VINEYARD"] #Caitlin's categories to exclued
+# crops = cropmap[cropmap['Crop2014'].isin(non_crops)== False]  #Anaya's field
+crops = cropmap[cropmap['DWR_Standa'].isin(non_crops)== False] # Caitlin's field is DWR_Standa
+#############################################
+
+
+
+##### EJ ###################################
+cal_EJ = gpd.read_file(opj(DATA_DIR,
+                          calenviroscreen_shapefile))
+cal_EJ.to_crs(epsg=4326) # make sure this is in the right projection
+#############################################
+
+
+
+##### OPP ZONES ##############################
+opp_zones = gpd.read_file(opj(DATA_DIR,
+                          oppzones_shapefile))
+opp_zones = opp_zones[opp_zones['STATENAME'] == "California"]
+opp_zones = opp_zones.to_crs(epsg=4326) # make sure this is in the right projection
+#############################################
+
+
+##############################################################################################
+# LOAD MATRICES FROM ROAD NETWORK (see roadnetworkprep.py for details on creation)
+# print('LOADING ROAD MATRICES')
+
+# //TODO - make sure directory is consistent on REMOTE SERVER
+with open('outputs/node_pts.p', 'rb') as f:
+    nodes = pickle.load(f)
+
+with open('outputs/adjacency.p', 'rb') as f:
+    L = pickle.load(f)
+
+with open('outputs/distance.p', 'rb') as f:
+    Distance = pickle.load(f)
+
+
+print("DATA LOADED & CLEANED")
+
+##############################################################################################
+### CONNECT POINTS TO ROAD NETWORK!! ######
+##############################################################################################
+
+
+# ASSOCIATE MSW PTS to NODE ON ROAD NETWORK
+msw_node = []
+print("starting to associate msw pts to road nodes")
+for p, point in enumerate(msw['geometry']):
+    temp = []
+    if p % 100 == 0:
+        print("STILL RUNNING: ", p)
+    for i, node in enumerate(nodes):
+        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+        temp.append(dist)
+    nn = np.argmin(temp)
+    msw_node.append(nn)
+
+
+# These take a long time - SAVE THEM!!! 
+with open('outputs/msw_node.p', 'wb') as f:
+    pickle.dump(msw_node)
+
+print("msw_node saved")
+
+# ASSOCIATE EXISTING FACILITIES   
+composter_node = []
+print("starting to associate existing comopsters to road nodes")
+for p, point in enumerate(composters['geometry']):
+    temp = []
+    if p % 100 == 0:
+        print("STILL RUNNING: ", p)
+    for i, node in enumerate(nodes):
+        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+        temp.append(dist)
+    nn = np.argmin(temp)
+    composter_node.append(nn)
+
+# ASSOCIATE GL and CL ? TO NEAREST NODE? (use nearest_pt here?)
+
+
+
+# PLOT THESE IN TURN TO MAKE SURE THEY LOOK OKAY? 
+fig, ax = plt.subplots(ncols = 3, figsize = (12,4))
+# msw and nodes (plot each?)
+msw.plot(marker = 'o', color = 'm', edgecolor = 'white', label = ' MSW - TRUE',
+    ax = ax[0], alpha = 0.5)
+## PLOT - MSW_NODE
+composters.plot(marker = 'o', color = 'black', edgecolor = 'white', 
+    label = "Compost Facility - TRUE", ax = ax[1], zorder = 10)
+## PLOT - COMPOSTER_NODE
+
+# plot GL & CL
+
+
 ##############################################################################################
 # Fig XX : PLOT MSW, ROADS, EXISTING FACILITIES --> SEE SLIDES //TODO
 ##############################################################################################
@@ -218,6 +312,17 @@ california_state =  gpd.GeoSeries(cascaded_union(california['geometry']))[0]
 # only keep sites within state boundary
 potential_sites = potential_sites.intersection(california_state)
 
+print("ASSOCIATE ALL SIM POINTS WITH CLOSEST NODE IN ROAD NETWORK")
+# ASSOCIATE EACH RANDOMIZED POINT TO NODE ON ROAD NETWORK
+point_node = []
+for p, point in enumerate(potential_sites):
+    temp = []
+    for i, node in enumerate(nodes):
+        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+        temp.append(dist)
+    nn = np.argmin(temp)
+    point_node.append(nn)
+
 
 ##############################################################################################
 # plot to make sure this looks like I expect --> SEE SLIDES
@@ -276,19 +381,7 @@ km_per_degree = np.cos(lat)*111.321
 buffer_radius = buffer_km/km_per_degree # buffer_km defined by USER ABOVE
 
 
-##############################################################################################
-# LOAD MATRICES FROM ROAD NETWORK (see roadnetworkprep.py for details on creation)
-print('LOADING ROAD MATRICES')
 
-# //TODO - make sure directory is consistent on REMOTE SERVER
-with open('outputs/node_pts.p', 'rb') as f:
-    nodes = pickle.load(f)
-
-with open('outputs/adjacency.p', 'rb') as f:
-    L = pickle.load(f)
-
-with open('outputs/distance.p', 'rb') as f:
-    Distance = pickle.load(f)
 ##############################################################################################
 
 # ###### PLOT ###########################
@@ -301,16 +394,6 @@ print("START CALCULATING SCORES")
 # CREATE EMPTY ARRAY FOR POTENTIAL SITES VALUES
 site_results = np.zeros(len(potential_sites))
 
-# CONNECT EACH RANDOMIZED POINT TO NODE ON ROAD NETWORK
-point_node = []
-for p, point in enumerate(potential_sites):
-    temp = []
-    for i, node in enumerate(nodes):
-        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
-        temp.append(dist)
-    nn = np.argmin(temp)
-    point_node.append(nn)
-
 # LOOP THROUGH ALL POINTS
 for p, point in enumerate(potential_sites):
     if p % 100 == 0:
@@ -322,6 +405,8 @@ for p, point in enumerate(potential_sites):
     # lat, lon = point.x, point.y
     # ax.plot(lat, lon, 'kx')
     # ax.plot(blat, blon, 'k--')
+    ##### nearest_node ######
+    nn = point_node[p]
     ##### MSW (TON OF FEEDSTOCK) #####
     for f, geom in enumerate(msw['geometry']):
         if geom.intersection(buffer):
