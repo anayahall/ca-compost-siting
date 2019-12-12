@@ -154,7 +154,7 @@ print("--reading in CROP MAP--")
 # out = r"treecrops.shp"
 # tree_crops.to_file(driver='ESRI Shapefile', filename=opj(DATA_DIR, out))
 
-crops = gpd.read_file(opj(DATA_DIR, 'treecrops.shp'))
+crops = gpd.read_file(opj(DATA_DIR, 'treecrops/treecrops.shp'))
 # identify centroid for use in node assignment
 crops['centroid'] = crops['geometry'].centroid
 #############################################
