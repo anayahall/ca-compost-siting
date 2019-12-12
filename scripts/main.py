@@ -23,7 +23,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # import other scripts??
 
-from supportfucntions import shortest_path
+from support_functions import shortest_path
 
 # set data directory # 
 
@@ -102,6 +102,9 @@ msw_total = msw.groupby(['ID', 'County']).sum()
 # Composting Facilities
 composters = gpd.read_file(opj(DATA_DIR,
                                 compost_facilities_shapefile))
+# change capacity metric to tons!
+composters['cap_ton'] = composters['cap_m3']*0.58
+
 
 # Rangelands
 rangelands = gpd.read_file(opj(DATA_DIR,
@@ -128,6 +131,17 @@ msw = msw[(msw['subtype'] == "MSWfd_wet_dryad_wetad") | (msw['subtype'] == "MSWg
 msw['subtype'].replace({'MSWfd_wet_dryad_wetad': 'MSW_food', 
                         'MSWgn_dry_dryad': 'MSW_green'}, inplace = True)
 
+# I'll be using 100% of the GREEN waste, so leave as is
+
+# for FOOD WASTE, take off 2.5%, 
+# then of the remainer divert 62.5% of generation to compost
+# (assume that 25% goes straight to compost, 75% goes to AD, which reduces volume of material by half, 
+# before being composted)
+# equivlant to 0.609375
+# create new array of values
+new_wt_values = msw[msw['subtype'] == 'MSW_food']['wt']*0.609375
+# replace these in place!
+msw.loc[msw['subtype'] == 'MSW_food', 'wt'] = new_wt_values
 
 print("DATA LOADED")
 ##############################################################################################
@@ -264,10 +278,12 @@ buffer_radius = buffer_km/km_per_degree # buffer_km defined by USER ABOVE
 # LOAD MATRICES FROM ROAD NETWORK (see roadnetworkprep.py for details on creation)
 print('LOADING ROAD MATRICES')
 
-with open('adjacency.p', 'rb') as f:
+# //TODO - make sure directory is consistent on REMOTE SERVER
+
+with open('outputs/adjacency.p', 'rb') as f:
     L = pickle.load(f)
 
-with open('distance.p', 'rb') as f:
+with open('outputs/distance.p', 'rb') as f:
     Distance = pickle.load(f)
 ##############################################################################################
 
@@ -280,17 +296,19 @@ raise Exception("ABOUT TO START CALCULATING SCORES!! TROUBLESHOOT FROM HERE")
 print("START CALCULATING SCORES")
 # CREATE EMPTY ARRAY FOR POTENTIAL SITES VALUES
 site_results = np.zeros(len(potential_sites))
+
 # LOOP THROUGH ALL POINTS
 for p, point in enumerate(potential_sites):
     if p % 100 == 0:
         print("looping through site number: ", p)
     value = 0
-    # buffer point
+    # BUFFER AROUND point
     buffer = point.buffer(buffer_radius)
-    blat, blon = buffer.exterior.xy
-    lat, lon = point.x, point.y
+    # blat, blon = buffer.exterior.xy
+    # lat, lon = point.x, point.y
     # ax.plot(lat, lon, 'kx')
     # ax.plot(blat, blon, 'k--')
+    ##### MSW (TON OF FEEDSTOCK) #####
     for f, geom in enumerate(msw['geometry']):
         if geom.intersection(buffer):
 #             print('FOUND ONE', p, f)
@@ -299,16 +317,23 @@ for p, point in enumerate(potential_sites):
             #            alpha = '0.2')
 #             geom.plot(markersize = 'total_wt' ax = ax, alpha = 0.5)
             value += msw.iloc[f, :]['wt']
+            dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
+    ##### COMPOST FACILITIES (CAPACITY) ######
     for c, geom in enumerate(composters['geometry']):
 #         print(c)
 #         print(geom.type)
         if geom.intersection(buffer):
-            value += -(composters.iloc[c, :]['cap_m3'])
+            value += -(composters.iloc[c, :]['cap_ton'])
             # ax.scatter(geom.x, geom.y, marker = 'o', color = 'black', 
             #            edgecolor = 'white', alpha = '0.9')
+            dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
+
+    ###### dist
     if value > 100:
 #         print('YAY')
         site_results[p] = value
+
+## NOTE: THIS TAKES ABOUT 12 min on my local machine to run - check server? //TODO
 
 
 # save site results to plot later
