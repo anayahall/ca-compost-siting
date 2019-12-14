@@ -29,10 +29,10 @@ from support_functions import shortest_path
 # set data directory # 
 
 # LOCAL DATA DIR
-DATA_DIR = "/Users/anayahall/Box/compostsiting/data"
+# DATA_DIR = "/Users/anayahall/Box/compostsiting/data"
 
 # SERVER DATA DIR
-# DATA_DIR = "data"
+DATA_DIR = "data"
 
 ### Data used in this script:
 # CALIFORNIA SHAPES
@@ -54,7 +54,7 @@ oppzones_shapefile= "Opportunity Zones/8764oz.shp"
 air_district_shapefile = "ca_air_district/CaAirDistrict.shp"
 
 ## USER-DEFINED PARAMETERS
-buffer_km = 75 # //TODO COULD MAKE THIS A USER INPUT SOMEWHERE ELSE! 
+buffer_km = 100 # //TODO COULD MAKE THIS A USER INPUT SOMEWHERE ELSE! 
 
 print("DATA READY TO LOAD")
 
@@ -141,6 +141,9 @@ rangelands = rangelands.to_crs(epsg=4326) # make sure this is in the right proje
 # identify centroid for use in node assignment
 rangelands['centroid'] = rangelands['geometry'].centroid
 
+rangelands['area_ha'] = rangelands['Shape_Area']/10000 # convert area in m2 to hectares
+rangelands['capacity_tons'] = rangelands['area_ha'] * 36.83
+
 # Read in cropland data
 print("--reading in CROP MAP--")
 
@@ -154,9 +157,18 @@ print("--reading in CROP MAP--")
 # out = r"treecrops.shp"
 # tree_crops.to_file(driver='ESRI Shapefile', filename=opj(DATA_DIR, out))
 
-crops = gpd.read_file(opj(DATA_DIR, 'treecrops/treecrops.shp'))
+# crops = gpd.read_file(opj(DATA_DIR, 'treecrops/treecrops.shp'))
 # identify centroid for use in node assignment
-crops['centroid'] = crops['geometry'].centroid
+# crops['centroid'] = crops['geometry'].centroid
+
+# //TODO MINIMIZE THIS TO SOMETHING MORE MANAGABLE! >> GRAPES & ALMONDS
+# crops[(crops['Crop2014'] == 'Grapes') | (crops['Crop2014'] == 'Almonds')]
+hvcrops = gpd.read_file(opj(DATA_DIR, 'treecrops/hv_treecrops.shp'))
+# identify centroid for use in node assignment
+hvcrops['centroid'] = hvcrops['geometry'].centroid
+
+hvcrops['area_ha'] = hvcrops['Acres']/2.471 # convert area in acres to hectares
+hvcrops['capacity_tons'] = hvcrops['area_ha'] * 36.83
 #############################################
 
 
@@ -182,10 +194,10 @@ air_districts = gpd.read_file(opj(DATA_DIR, air_district_shapefile))
 air_districts = air_districts.to_crs(epsg=4326)
 
 # PLOT THESE TO SEE HOW THEY DO/DON'T ALIGN WITH COUNTIES #
-fig, ax = plt.subplots()
-air_districts.plot(column = 'NAME', ax = ax)
-california.plot(facecolor="none", edgecolor = 'black', linestyle = '--', ax = ax)
-plt.show()
+# fig, ax = plt.subplots()
+# air_districts.plot(column = 'NAME', ax = ax)
+# california.plot(facecolor="none", edgecolor = 'black', linestyle = '--', ax = ax)
+# plt.show()
 #############################################
 
 ##############################################################################################
@@ -261,28 +273,34 @@ for p, point in enumerate(rangelands['centroid']):
     nn = np.argmin(temp)
     gl_node.append(nn)
 
-raise Exception("ALL LOADED - PRE- CROP-NODE ASSOCIATION (RUNNING ELSEWHERE)")    
 
-crop_node = []
-for p, point in enumerate(crops['centroid']):
-    temp = []
-    if p % 10 == 0:
-        print("CROP - STILL RUNNING: ", p)
-    for i, node in enumerate(nodes):
-        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
-        temp.append(dist)
-    nn = np.argmin(temp)
-    crop_node.append(nn)
+##############################################################################################
+# raise Exception("ALL LOADED - PRE- CROP-NODE ASSOCIATION (RUNNING ELSEWHERE)")    
+# print('STARTING CROP ASSOCIATION - SO SLOW')
+# sub_crop_node = []
+# for p, point in enumerate(sub_crops['centroid']):
+#     temp = []
+#     if p % 100 == 0:
+#         print("CROP - STILL RUNNING: ", p)
+#     for i, node in enumerate(nodes):
+#         dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+#         temp.append(dist)
+#     nn = np.argmin(temp)
+#     sub_crop_node.append(nn)
 
-# # These take a long time - SAVE THEM!!! 
-with open('outputs/crop_node.p', 'wb') as f:
-    pickle.dump(crop_node, f)
+# # # These take a long time - SAVE THEM!!! 
+# with open('outputs/sub_crop_node.p', 'wb') as f:
+#     pickle.dump(sub_crop_node, f)
 
-print("msw_node saved")
+# print("crop_node saved!!")
+##############################################################################################
 
 # instead of re-running - load saved file!
-with open('outputs/crop_node.p', 'rb') as f:
-    crop_node = pickle.load(f)
+# with open('outputs/crop_node.p', 'rb') as f:
+#     crop_node = pickle.load(f)
+
+with open('outputs/sub_crop_node.p', 'rb') as f:
+    sub_crop_node = pickle.load(f)
 
 
 # PLOT THESE IN TURN TO MAKE SURE THEY LOOK OKAY? 
@@ -440,7 +458,7 @@ for p, point in enumerate(potential_sites):
 ##############################################################################################
 
 # (maybe wrap this into function to calculate radius throughout california!) //TODO
-
+print("DEFINING BUFFERS")
 # Calculate buffer around each point and get expected value of new site there!
 #rad = deg * pi/180
 lat = california_state.centroid.y * np.pi/180 # in radians
@@ -450,24 +468,26 @@ km_per_degree = np.cos(lat)*111.321
 buffer_radius = buffer_km/km_per_degree # buffer_km defined by USER ABOVE
 
 
-
 ##############################################################################################
 
 # ###### PLOT ###########################
 # f, ax = plt.subplots(figsize = (8,8))
 # california.plot(color = 'white', edgecolor = 'darkgrey', ax = ax)
 
-raise Exception("ABOUT TO START CALCULATING SCORES!! TROUBLESHOOT FROM HERE")
+# raise Exception("ABOUT TO START CALCULATING SCORES!! TROUBLESHOOT FROM HERE")
 
-print("START CALCULATING SCORES")
+south_coast = air_districts[air_districts['NAME'] == 'South Coast']['geometry']
+
+print("START CALCULATING SCORES for ****", len(potential_sites), "**** SITES")
 # CREATE EMPTY ARRAY FOR POTENTIAL SITES VALUES
-site_results = np.zeros(len(potential_sites))
+# site_results = np.zeros(len(potential_sites))
+site_results = []
 
 # LOOP THROUGH ALL POINTS
 for p, point in enumerate(potential_sites):
-    if p % 100 == 0:
+    if p % 10 == 0:
         print("looping through site number: ", p)
-    value = 0
+    # value = 0
     # BUFFER AROUND point
     buffer = point.buffer(buffer_radius)
     # blat, blon = buffer.exterior.xy
@@ -477,6 +497,7 @@ for p, point in enumerate(potential_sites):
     ##### nearest_node ######
     nn = point_node[p]
     ##### MSW (TON OF FEEDSTOCK) #####
+    feedstock_score = 0
     for f, geom in enumerate(msw['geometry']):
         if geom.intersection(buffer):
 #             print('FOUND ONE', p, f)
@@ -484,37 +505,57 @@ for p, point in enumerate(potential_sites):
             # ax.scatter(geom.x, geom.y, c = 'm', s = (msw.loc[f, 'total_wt'])/10, 
             #            alpha = '0.2')
 #             geom.plot(markersize = 'total_wt' ax = ax, alpha = 0.5)
-            value += msw.iloc[f, :]['wt']
-            # dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
+            msw_tons = msw.iloc[f, :]['wt']
+            dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
+            feedstock_score += msw_tons * dist
     ##### COMPOST FACILITIES (CAPACITY) ######
+    comp_score = 0
     for c, geom in enumerate(composters['geometry']):
 #         print(c)
 #         print(geom.type)
         if geom.intersection(buffer):
-            value += -(composters.iloc[c, :]['cap_ton'])
+            value = -(composters.iloc[c, :]['cap_ton'])
             # ax.scatter(geom.x, geom.y, marker = 'o', color = 'black', 
             #            edgecolor = 'white', alpha = '0.9')
+            dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
+            comp_score += value * dist
+    ##### MARKET CAPACITY (AREA?) ######
+    market_score = 0
+    for m, geom in enumerate(hvcrops['geometry']):
+        if geom.intersection(buffer):
+            # print("hv crops")
+            value = hvcrops.iloc[m, :]['capacity_tons']
             # dist = np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
-	###### CLOSEST NODE? THEN USE DIJSTRKA"S ~~~~~~~~~~
-	# this 
-	# np = nearest_points(point, nodes[1])[1]
-    ###### dist
-    if value > 100:
-#         print('YAY')
-        site_results[p] = value
+            market_score += value    
+    ##### AIR QUALITY BINARY ######
+    # aq_score = np.NaN
+    for geom in south_coast:
+        if point.within(geom):
+            print("IN SOUTH COAST")
+            aq_score = 1
+        else:
+            aq_score = 0
+    ##### EJ BINARY ######
+    for t, geom in enumerate(cal_EJ['geometry']):
+        if geom.contains(point):
+            # grab EJ score as a percent (HIGHER IS BAD!)
+            ej_score = (cal_EJ.iloc[t, :]['CIscore'])/100
+        else:
+            ej_score = 0
+    ##### OPP ZONE BINARY ######
+    for o, geom in enumerate(opp_zones['geometry']):
+        if geom.contains(point):
+            opp_score = 1
+        else:
+            opp_score = 0
+    # APPEND ALL ! 
+    site_results.append([feedstock_score, market_score, comp_score, aq_score, ej_score,opp_score])
+    ## AT END, APPEND ALL OF THESE TO MY LIST
 
 ## NOTE: THIS TAKES ABOUT 12 min on my local machine to run - check server? //TODO
 
-
-
-
-
-
-
-
-
 # save site results to plot later
-with open('site_results.p', 'wb') as f:
+with open('outputs/site_results.p', 'wb') as f:
     pickle.dump(site_results, f)
 
 # ax.plot([], [], 'kx', label = 'Potential Site')    
@@ -533,18 +574,37 @@ with open('site_results.p', 'wb') as f:
 ##############################################################################################
 
 #  //TODO
-# make sure considering all of the things
-# and saving
 # sort 50 - 100? pick size somehow?
 # plot the ones based on different cats
-# could save each value as field and then use weighting to determine score
+
+# policy objective one: monies
+p1_score = np.zeros(len(potential_sites))
+# loop through all and calculate
+for p in range(len(site_results)):
+    # x = site_results[p]
+    p1_score[p] = x[0]*35*32 + x[1] #//TODO FIX THIS TO MAKE SENSE
+
+#sort!
+p1_idx = np.argsort(p1_score) # returns the indices
+# grab 100 best sites
+p1_idx = p1_idx[-100:]
+# use this to grab the potential sites?
+
+p1_sites = []
+for p, point in enumerate(potential_sites):
+    # print(p)
+    if p in p1_idx:
+        p1_sites.append(point) #append might not be the right thing here..... //TODO
+
+
+# policy objective two: 
 
 ##############################################################################################
 # FIG X. RESULTS
 ##############################################################################################
 # //TODO
-# Plot histogram of something
-# map viz of different categories
-# make user input? 
+# Plot histogram of something??
+# map viz of different categories??
+
 
 

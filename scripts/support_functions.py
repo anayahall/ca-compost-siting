@@ -55,25 +55,29 @@ def add_region_variable(df, county_column):
 
 # REQUIRES DISTANCE_NETWORK TO BE ALREADY MADE!!!!
 
-def shortest_path(distance_network, k0, k_final): # change presets as desired!
+def shortest_path(Distance, L, k0, k_final): 
     """
     uses djisktra's algorithm to calculate the shortest path between defined nodes
     given a cost-distance matrix
     
     returns path, which can then be used for plotting!
     """
-    
+
+    # define matrices
+    L = L
+    Distance = Distance
+
     # k0 = int(input('Station for facility?  Enter 1 to ' + str(len(stations)) + ':'))
-    
+
     # D(i) = 'minimum distance to source location' [initialize as 'np.inf' for all elements except zero at source]
-    D = np.full(len(distance_network), np.inf)
+    D = np.full(len(Distance), np.inf)
     D[k0] = 0
 
     # P(i) = 'parent node', keeps track of location where you jsut were [initialized as 'NaN' everywhere]
-    P = np.full(len(distance_network), np.NaN)
+    P = np.full(len(Distance), np.NaN)
 
     # P(i) = 'parent node', keeps track of location where you jsut were [initialized as 'NaN' everywhere]
-    I = np.zeros(len(distance_network))
+    I = np.zeros(len(Distance))
 
     # thrid, ITERATE the following until I(i) = 1 (while I == 0)
 
@@ -107,7 +111,7 @@ def shortest_path(distance_network, k0, k_final): # change presets as desired!
 
     while path[-1] != k0:
         k = int(P[path[-1]])
-        # distance_traveled += Distance[path[-1],k]
+        distance_traveled += Distance[path[-1],k]
         path.append(k)
 
     # fig, ax = plt.subplots(ncols = 2, figsize = (15, 5))
