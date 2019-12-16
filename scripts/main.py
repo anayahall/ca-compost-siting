@@ -236,36 +236,37 @@ print("DATA LOADED & CLEANED")
 #     pickle.dump(msw_node, f)
 
 # print("msw_node saved")
-
+###########     #############     #############     #############     #############     
 # instead of re-running - load saved file!
-with open('outputs/msw_node.p', 'rb') as f:
-    msw_node = pickle.load(f)
+# with open('outputs/msw_node.p', 'rb') as f:
+#     msw_node = pickle.load(f)
 
 
-# ASSOCIATE EXISTING FACILITIES   
-composter_node = []
-print("starting to associate existing comopsters to road nodes")
-for p, point in enumerate(composters['geometry']):
-    temp = []
-    if p % 100 == 0:
-        print("CMP - STILL RUNNING: ", p)
-    for i, node in enumerate(nodes):
-        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
-        temp.append(dist)
-    nn = np.argmin(temp)
-    composter_node.append(nn)
+# # ASSOCIATE EXISTING FACILITIES   
+# composter_node = []
+# print("starting to associate existing comopsters to road nodes")
+# for p, point in enumerate(composters['geometry']):
+#     temp = []
+#     if p % 100 == 0:
+#         print("CMP - STILL RUNNING: ", p)
+#     for i, node in enumerate(nodes):
+#         dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+#         temp.append(dist)
+#     nn = np.argmin(temp)
+#     composter_node.append(nn)
 
-# ASSOCIATE GL and CL TO NEAREST NODE? (use CENTROID OF POLYGON
-gl_node = []
-for p, point in enumerate(rangelands['centroid']):
-    temp = []
-    if p % 100 == 0:
-        print("GL - STILL RUNNING: ", p)
-    for i, node in enumerate(nodes):
-        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
-        temp.append(dist)
-    nn = np.argmin(temp)
-    gl_node.append(nn)
+# # ASSOCIATE GL and CL TO NEAREST NODE? (use CENTROID OF POLYGON
+# gl_node = []
+# for p, point in enumerate(rangelands['centroid']):
+#     temp = []
+#     if p % 100 == 0:
+#         print("GL - STILL RUNNING: ", p)
+#     for i, node in enumerate(nodes):
+#         dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+#         temp.append(dist)
+#     nn = np.argmin(temp)
+#     gl_node.append(nn)
+###########     #############     #############     #############     #############     
 
 
 ###########     #############     #############     #############     #############     
@@ -325,67 +326,91 @@ with open('outputs/sub_crop_node.p', 'rb') as f:
 ##############################################################################################
 
 
-fig, ax = plt.subplots(ncols = 2, figsize = (18,8))
+# fig, ax = plt.subplots(ncols = 3, figsize = (18,8))
 
-# divider = make_axes_locatable(ax)
-# cax = divider.append_axes("right", size="5%", pad=0.1)
+# # divider = make_axes_locatable(ax)
+# # cax = divider.append_axes("right", size="5%", pad=0.1)
 
-# for geom in california['geometry']: 
-#     if geom.type == 'Polygon':
-#         # plot normally
-# #         plt.plot(*df.loc[d, 'geometry'].exterior.xy, 'w-', linewidth =1.5)
-#         lat, lon = geom.exterior.xy
-# #         plt.plot(lat, lon, 'k--')
-#         ax.plot(*geom.exterior.xy, 'darkgrey', linewidth = 1.5)
-#     elif geom.type == 'MultiPolygon':
-#         for p in geom:
-#             ax.plot(*p.exterior.xy, 'darkgrey', linewidth =1.5)
+# # for geom in california['geometry']: 
+# #     if geom.type == 'Polygon':
+# #         # plot normally
+# # #         plt.plot(*df.loc[d, 'geometry'].exterior.xy, 'w-', linewidth =1.5)
+# #         lat, lon = geom.exterior.xy
+# # #         plt.plot(lat, lon, 'k--')
+# #         ax.plot(*geom.exterior.xy, 'darkgrey', linewidth = 1.5)
+# #     elif geom.type == 'MultiPolygon':
+# #         for p in geom:
+# #             ax.plot(*p.exterior.xy, 'darkgrey', linewidth =1.5)
 
-california.plot(color = 'white', edgecolor = 'darkgrey', ax = ax[0])
-road_network.plot(color = 'lightgrey', linestyle = '-', 
-                  linewidth = 1.5, label = "Roads", ax = ax[0], alpha = 0.9)
-#  THIS ONE FOR POINTS
-msw[msw['subtype'] == 'MSW_green'].plot(markersize = 'bdt', 
-         legend = True, ax = ax[0], alpha = 0.5, c = 'm')
-ax[0].plot([],[], 'mo', label = 'MSW (tons)')
-# THIS ONE FOR POLYGONS (CHOROPLETH)
-# tract_sum_geo.plot(column = 'wt', ax = ax, cmap = 'Purples', 
-#                    edgecolor = 'white', legend = True, cax = cax)
+# california.plot(color = 'white', edgecolor = 'darkgrey', ax = ax[0])
+# road_network.plot(color = 'lightgrey', linestyle = '-', 
+#                   linewidth = 1.5, label = "Roads", ax = ax[0], alpha = 0.9)
+# #  THIS ONE FOR POINTS
+# msw[msw['subtype'] == 'MSW_green'].plot(markersize = 'bdt', 
+#          legend = True, ax = ax[0], alpha = 0.5, c = 'm')
+# ax[0].plot([],[], 'mo', label = 'MSW (tons)')
+# # THIS ONE FOR POLYGONS (CHOROPLETH)
+# # tract_sum_geo.plot(column = 'wt', ax = ax, cmap = 'Purples', 
+# #                    edgecolor = 'white', legend = True, cax = cax)
 
-composters.plot(marker = 'o', color = 'black', edgecolor = 'white', label = "Compost Facility", 
-                ax = ax[0], zorder = 10)
-# cbar.set_label('Org. Fraction MSW')
-ax[0].set_xlabel("Longitude")
-ax[0].set_ylabel("Latitude")
-ax[0].set_title('California MSW, Roads and Existing Facilities')
-ax[0].legend()
+# composters.plot(marker = 'o', color = 'black', edgecolor = 'white', label = "Compost Facility", 
+#                 ax = ax[0], zorder = 10)
+# # cbar.set_label('Org. Fraction MSW')
+# ax[0].set_xlabel("Longitude")
+# ax[0].set_ylabel("Latitude")
+# ax[0].set_title('California MSW, Roads and Existing Facilities')
+# ax[0].legend()
 
 
 
-# ADD OTHER DATA SOURCE -- hvcrops
+# # ADD OTHER DATA SOURCE -- hvcrops
 
-california.plot(color = 'white', edgecolor = 'darkgrey', ax = ax[1])
-road_network.plot(color = 'lightgrey', linestyle = '-', 
-                  linewidth = 1.5, label = "Roads", ax = ax[1], alpha = 0.9)
-composters.plot(marker = 'o', color = 'black', edgecolor = 'white', label = "Compost Facility", 
-                ax = ax[1], zorder = 10)
+# california.plot(color = 'white', edgecolor = 'darkgrey', ax = ax[1])
+# road_network.plot(color = 'lightgrey', linestyle = '-', 
+#                   linewidth = 1.5, label = "Roads", ax = ax[1], alpha = 0.9)
+# composters.plot(marker = 'o', color = 'black', edgecolor = 'white', label = "Compost Facility", 
+#                 ax = ax[1], zorder = 10)
 
-hvcrops = hvcrops.set_geometry('centroid')
-hvcrops.plot(color = 'blue', alpha= 0.6, ax = ax[1], label = 'HV Crops', 
-    markersize = hvcrops['capacity_tons']/10)
+# hvcrops = hvcrops.set_geometry('centroid')
+# hvcrops.plot(color = 'blue', alpha= 0.6, ax = ax[1], label = 'HV Crops', 
+#     markersize = hvcrops['capacity_tons']/5)
 
-rangelands = rangelands.set_geometry('centroid')
-rangelands.plot(color = "green", ax = ax[1], alpha = 0.6, label = 'Rangeland', 
-    markersize = rangelands['capacity_tons']/5000)
-# # oppzones
-# opp_zones.plot(color = 'pink', ax = ax[1], label = 'Opportunity Zones')
-# also plot air districts and EJ?
-ax[1].set_xlabel("Longitude")
-ax[1].set_ylabel("Latitude")
-ax[1].set_title('Suitable Grasslands and High Value Crops')
+# rangelands = rangelands.set_geometry('centroid')
+# rangelands.plot(color = "green", ax = ax[1], alpha = 0.6, label = 'Rangeland', 
+#     markersize = rangelands['capacity_tons']/8000)
+# # # oppzones
+# # opp_zones.plot(color = 'pink', ax = ax[1], label = 'Opportunity Zones')
+# # also plot air districts and EJ?
+# ax[1].set_xlabel("Longitude")
+# ax[1].set_ylabel("Latitude")
+# ax[1].set_title('Suitable Grasslands and High Value Crops')
+# ax[1].legend()
+
+
+
+
+# road_network.plot(color = 'lightgrey', linestyle = '-', 
+#                   linewidth = 1.5, label = "Roads", ax = ax[2], alpha = 0.9)
+# composters.plot(marker = 'o', color = 'black', edgecolor = 'white', label = "Compost Facility", 
+#                 ax = ax[2], zorder = 10)
+
+
+# # # oppzones
+# opp_zones.plot(color = 'pink', ax = ax[2], label = 'Opportunity Zones')
+# air_districts.plot(facecolor = 'none', edgecolor = 'k', ax = ax[2])
+# cal_EJ.plot(column = 'CIscoreP', cmap = 'RdYlGn_r', ax = ax[2])
+
+# # also plot air districts and EJ?
+# ax[2].set_xlabel("Longitude")
+# ax[2].set_ylabel("Latitude")
+# ax[2].set_title('Suitable Grasslands and High Value Crops')
+# ax[2].legend()
+
+
+
 
 # plt.show()
-fig.savefig('figures/datasources.png')
+# fig.savefig('figures/datasources.png')
 
 
 # //TODO - add third category?
@@ -406,35 +431,40 @@ print("STARTING POINT SIM")
 # simulating random points:
 
 # number of events to simulate
-N = 10000
+# N = 2000
 
-# AREA to cast random numbers in 
-# 10 degrees from -125
-lon = np.random.random(N) * 10 - 125
-# 10 degrees from 32
-lat = np.random.random(N) * 10 + 32
+# # AREA to cast random numbers in 
+# # 10 degrees from -125
+# lon = np.random.random(N) * 10 - 125
+# # 10 degrees from 32
+# lat = np.random.random(N) * 10 + 32
 
-# this reorganizes the points such that the input format
-# is consistent with what MultiPoint() expects
-potential_sites = MultiPoint(np.vstack((lon, lat)).T)
+# # this reorganizes the points such that the input format
+# # is consistent with what MultiPoint() expects
+# potential_sites = MultiPoint(np.vstack((lon, lat)).T)
 
-# california (union of all conties for full state)
+# # california (union of all conties for full state)
 california_state =  gpd.GeoSeries(cascaded_union(california['geometry']))[0]
 
-# only keep sites within state boundary
-potential_sites = potential_sites.intersection(california_state)
+# # only keep sites within state boundary
+# potential_sites = potential_sites.intersection(california_state)
 
-print("ASSOCIATE ALL SIM POINTS WITH CLOSEST NODE IN ROAD NETWORK")
-# ASSOCIATE EACH RANDOMIZED POINT TO NODE ON ROAD NETWORK
-point_node = []
-for p, point in enumerate(potential_sites):
-    temp = []
-    for i, node in enumerate(nodes):
-        dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
-        temp.append(dist)
-    nn = np.argmin(temp)
-    point_node.append(nn)
+# # print("ASSOCIATE ALL SIM POINTS WITH CLOSEST NODE IN ROAD NETWORK")
+# # # ASSOCIATE EACH RANDOMIZED POINT TO NODE ON ROAD NETWORK
+# # point_node = []
+# # for p, point in enumerate(potential_sites):
+# #     temp = []
+# #     for i, node in enumerate(nodes):
+# #         dist = np.sqrt((point.x - node.x)**2 + (point.y - node.y)**2)
+# #         temp.append(dist)
+# #     nn = np.argmin(temp)
+# #     point_node.append(nn)
+# with open('outputs/potential_sites.p', 'wb') as f:
+#     pickle.dump(potential_sites, f)
 
+
+with open('outputs/potential_sites.p', 'rb') as f:
+    potential_sites = pickle.load(f)
 
 
 ##############################################################################################
@@ -455,93 +485,99 @@ buffer_radius = buffer_km/km_per_degree # buffer_km defined by USER ABOVE
 
 ##############################################################################################
 
-raise Exception("ABOUT TO START CALCULATING SCORES!! ")
+# raise Exception("ABOUT TO START CALCULATING SCORES!! ")
 
 south_coast = air_districts[air_districts['NAME'] == 'South Coast']['geometry']
 
 print("START CALCULATING SCORES for ****", len(potential_sites), "**** SITES")
-# CREATE EMPTY ARRAY FOR POTENTIAL SITES VALUES
-# site_results = np.zeros(len(potential_sites))
-site_results = []
+# # CREATE EMPTY ARRAY FOR POTENTIAL SITES VALUES
+# # site_results = np.zeros(len(potential_sites))
+# site_results = []
+ej_score = []
 
-# LOOP THROUGH ALL POINTS
+# # LOOP THROUGH ALL POINTS
 for p, point in enumerate(potential_sites):
     if p % 10 == 0:
         print("looping through site number: ", p)
-    # value = 0
-    # BUFFER AROUND point
-    buffer = point.buffer(buffer_radius)
-    # blat, blon = buffer.exterior.xy
-    # lat, lon = point.x, point.y
-    # ax.plot(lat, lon, 'kx')
-    # ax.plot(blat, blon, 'k--')
-    ##### nearest_node ######
-    nn = point_node[p]
-    ##### MSW (TON OF FEEDSTOCK) #####
-    feedstock_score = 0
-    for f, geom in enumerate(msw['geometry']):
-        if geom.intersection(buffer):
-#             print('FOUND ONE', p, f)
-#             print(f)
-            # ax.scatter(geom.x, geom.y, c = 'm', s = (msw.loc[f, 'total_wt'])/10, 
-            #            alpha = '0.2')
-#             geom.plot(markersize = 'total_wt' ax = ax, alpha = 0.5)
-            msw_tons += msw.iloc[f, :]['wt']
-            msw_dist += np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
-    feedstock_score = msw_tons * msw_dist
-    ##### COMPOST FACILITIES (CAPACITY) ######
-    comp_score = 0
-    for c, geom in enumerate(composters['geometry']):
-#         print(c)
-#         print(geom.type)
-        if geom.intersection(buffer):
-            comp_value += -(composters.iloc[c, :]['cap_ton'])
-            # ax.scatter(geom.x, geom.y, marker = 'o', color = 'black', 
-            #            edgecolor = 'white', alpha = '0.9')
-            comp_dist += np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
-    comp_score = comp_value * comp_dist
-    ##### MARKET CAPACITY (AREA?) ######
-    market_score = 0
-    for m, geom in enumerate(hvcrops['centroid']):
-        if geom.within(buffer):
-            # print("hv crops")
-            market_value += hvcrops.iloc[m, :]['capacity_tons']
-            market_dist += np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
-    market_score = market_value * market_dist
-    ##### AIR QUALITY BINARY ######
-    # aq_score = np.NaN
-    for geom in south_coast:
-        if point.within(geom):
-            print("IN SOUTH COAST")
-            aq_score = 0
-        else:
-            aq_score = 1
-    ##### EJ BINARY ######
+#     # value = 0
+#     # BUFFER AROUND point
+#     buffer = point.buffer(buffer_radius)
+#     # blat, blon = buffer.exterior.xy
+#     # lat, lon = point.x, point.y
+#     # ax.plot(lat, lon, 'kx')
+#     # ax.plot(blat, blon, 'k--')
+#     ##### nearest_node ######
+#     # nn = point_node[p]
+#     ##### MSW (TON OF FEEDSTOCK) #####
+#     msw_tons = 0
+#     msw_dist = 0
+#     for f, geom in enumerate(msw['geometry']):
+#         if geom.intersection(buffer):
+# #             print('FOUND ONE', p, f)
+# #             print(f)
+#             # ax.scatter(geom.x, geom.y, c = 'm', s = (msw.loc[f, 'total_wt'])/10, 
+#             #            alpha = '0.2')
+# #             geom.plot(markersize = 'total_wt' ax = ax, alpha = 0.5)
+#             msw_tons += msw.iloc[f, :]['wt']
+#             msw_dist += np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
+#     feedstock_score = msw_tons * msw_dist
+#     ##### COMPOST FACILITIES (CAPACITY) ######
+#     comp_value = 0
+#     comp_dist = 0
+#     for c, geom in enumerate(composters['geometry']):
+# #         print(c)
+# #         print(geom.type)
+#         if geom.intersection(buffer):
+#             comp_value += -(composters.iloc[c, :]['cap_ton'])
+#             # ax.scatter(geom.x, geom.y, marker = 'o', color = 'black', 
+#             #            edgecolor = 'white', alpha = '0.9')
+#             comp_dist += np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
+#     comp_score = comp_value * comp_dist
+#     ##### MARKET CAPACITY (AREA?) ######
+#     market_value = 0
+#     market_dist = 0
+#     for m, geom in enumerate(hvcrops['centroid']):
+#         if geom.within(buffer):
+#             # print("hv crops")
+#             market_value += hvcrops.iloc[m, :]['capacity_tons']
+#             market_dist += np.sqrt((geom.x - point.x)**2 + (geom.y - point.y)**2)
+#     market_score = market_value * market_dist
+#     ##### AIR QUALITY BINARY ######
+#     # aq_score = np.NaN
+#     for geom in south_coast:
+#         if point.within(geom):
+#             print("IN SOUTH COAST")
+#             aq_score = 0
+#         else:
+#             aq_score = 1
+#     ##### EJ BINARY ######
     for t, geom in enumerate(cal_EJ['geometry']):
         if geom.contains(point):
             # grab EJ score as a percent (HIGHER IS BAD!)
-            ej_score = -(cal_EJ.iloc[t, :]['CIscore'])/100
+            # ej_score = (cal_EJ.iloc[t, :]['CIscore'])/100
+            ej_score.append((cal_EJ.iloc[t, :]['CIscore'])/100)
         else:
-            ej_score = 0
-    ##### OPP ZONE BINARY ######
-    for o, geom in enumerate(opp_zones['geometry']):
-        if geom.contains(point):
-            opp_score = 1
-        else:
-            opp_score = 0
-    # APPEND ALL ! 
-    site_results.append([feedstock_score, market_score, comp_score, aq_score, ej_score,opp_score, 
-        msw_tons, msw_dist, comp_value, comp_dist, market_value, market_dist])
+            ej_score.append(0)
+#     ##### OPP ZONE BINARY ######
+#     for o, geom in enumerate(opp_zones['geometry']):
+#         if geom.contains(point):
+#             opp_score = 1
+#         else:
+#             opp_score = 0
+#     # APPEND ALL ! 
+#     site_results.append([feedstock_score, market_score, comp_score, aq_score, ej_score,opp_score, 
+#         msw_tons, msw_dist, comp_value, comp_dist, market_value, market_dist])
     ## AT END, APPEND ALL OF THESE TO MY LIST
 
 ## NOTE: THIS TAKES ABOUT 12 min on my local machine to run - check server? //TODO
 
 # save site results to plot later
-with open('outputs/site_results.p', 'wb') as f:
-    pickle.dump(site_results, f)
+# with open('outputs/site_results.p', 'wb') as f:
+#     pickle.dump(site_results, f)
 
-# with open('outputs/site_results.p', 'rb') as f:
-#     site_results = pickle.load(f)
+with open('outputs/site_results.p', 'rb') as f:
+    site_results = pickle.load(f)
+
 
 # ax.plot([], [], 'kx', label = 'Potential Site')    
 # ax.plot([], [], 'k--', label = 'Buffer Zone')   
@@ -561,6 +597,8 @@ with open('outputs/site_results.p', 'wb') as f:
 
 # order: [feedstock_score, market_score, comp_score, aq_score, ej_score, opp_score, 
 #          msw_tons, msw_dist, comp_value, comp_dist, market_value, market_dist]
+
+raise Exception("HALLLLLA")
 
 print("STARTING POLICY EVALUATION")
 
@@ -585,6 +623,7 @@ for p, point in enumerate(potential_sites):
         p0_sites.append(point)
 
 p0_sites = MultiPoint(p0_sites)
+
 
 
 # policy objective one: monies
@@ -618,7 +657,7 @@ for p in range(len(site_results)):
     x = site_results[p]
     # p2 score made up of feedstock, market and competition, 
     # TIMES EJ score
-    p2_score[p] = (x[0] + x[1] + x[2]) * (1 - x[4]) 
+    p2_score[p] = (x[0] + x[1] + x[2]) * (1 - ej_score[4]) 
 
 #sort!
 p2_idx = np.argsort(p2_score) # returns the indices
@@ -644,7 +683,7 @@ for p in range(len(site_results)):
     x = site_results[p]
     # p3 score made up of feedstock, market and competition, 
     # TIMES EJ score & Opp zone indicator
-    p3_score[p] = (x[0] + x[1] + x[2]) * (1 - x[4])  * x[5] * x[3]
+    p3_score[p] = (x[0] + x[1] + x[2]) * (1 - ej_score[4])  * x[5] * x[3]
 
 #sort!
 p3_idx = np.argsort(p3_score) # returns the indices
@@ -660,7 +699,7 @@ for p, point in enumerate(potential_sites):
 
 p3_sites = MultiPoint(p3_sites)
 
-raise Exception(" HAVE RESULTS TO PLOT!")
+# raise Exception(" HAVE RESULTS TO PLOT!")
 
 
 
@@ -681,23 +720,27 @@ for point in potential_sites:
 #         if point.intersection(geom):
 #             glat, glon = geom.exterior.xy
 #             ax[0].plot(glat, glon, color = 'pink', alpha = '0.6')
-
+print('plotted mains')
 # panel 0
 for p in p0_sites:
     _ = ax[0,0].plot(p.x, p.y, marker = '*', color = 'r')
 
-
+print('plotted p0')
 # panel 1
 for p in p1_sites:
     _ = ax[0,1].plot(p.x, p.y, marker = '*', color = 'r')
+print('plotted p1')
 
 # panel 2
 for p in p2_sites:
     _ = ax[1,0].plot(p.x, p.y, marker = '*', color = 'r')
+print('plotted p2')
 
 # panel 3
 for p in p3_sites:
     _ = ax[1,1].plot(p.x, p.y, marker = '*', color = 'r')
+
+print('plotted p3')
 
 ax[0,0].set_title("Policy 0")
 ax[0,1].set_title("Policy 1")
@@ -714,8 +757,10 @@ for a in range(2):
         ax[a,b].set_xlabel("Longitude")
         ax[a,b].set_ylabel("Latitude")
         ax[a,b].legend()   
-    
+
 plt.show()
+
+fig.savefig('figures/policyresults.png')
 
 ##############################################################################################
 # FIG XX. HISTOGRAM
@@ -740,7 +785,7 @@ for s in range(len(site_results)):
     market_dist.append(site_results[s][11])
 
 
-fig, ax = plt.subplots(2,2, figsize = (8,8))
+fig, ax = plt.subplots(2,2, figsize = (10,8))
 
 ax[0,0].hist(msw_tons, bins='auto', color='#7bccc4',
                             alpha=0.7, rwidth=0.85)
@@ -767,25 +812,26 @@ for i in (range(2)):
         ax[i,j].set_ylabel("Count")
 plt.tight_layout()
 plt.show()
+fig.savefig('figures/histos.png')
 
 
 ##############################################################################################
 
-# # HALLA
-# f, ax = plt.subplots(figsize = (8,8))
-# california.plot(color = 'white', edgecolor = 'darkgrey', ax = ax)
-# for p, point in enumerate(potential_sites):
-#     if p % 10 == 0:
-#         print("looping through site number: ", p)
-#     # value = 0
-#     # BUFFER AROUND point
-#     buffer = point.buffer(buffer_radius)
-#     blat, blon = buffer.exterior.xy
-#     lat, lon = point.x, point.y
-#     ax.plot(lat, lon, 'kx')
-#     ax.plot(blat, blon, 'k--')
+# HALLA
+f, ax = plt.subplots(figsize = (8,8))
+california.plot(color = 'white', edgecolor = 'darkgrey', ax = ax)
+for p, point in enumerate(potential_sites):
+    if p % 10 == 0:
+        print("looping through site number: ", p)
+    # value = 0
+    # BUFFER AROUND point
+    buffer = point.buffer(buffer_radius)
+    blat, blon = buffer.exterior.xy
+    lat, lon = point.x, point.y
+    ax.plot(lat, lon, 'kx')
+    ax.plot(blat, blon, 'k--')
 
-# plt.show()
+plt.show()
 
 
 
